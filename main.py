@@ -25,7 +25,7 @@ with st.sidebar.expander("About"):
              f"[here](https://github.com/YohanV1/Heart-Disease-Prediction-Application)."
              f" If you have any suggestions or questions, "
              f"please don't hesitate to reach out.")
-with st.sidebar.expander('Model Metrics: '):
+with st.sidebar.expander('Model Metrics '):
     st.subheader("Decision Tree: ")
     st.write("Train = 84.06%, Test = 85.33%")
     st.subheader("Random Forest: ")
