@@ -1,26 +1,36 @@
 import streamlit as st
-import xgboost as xgb
 import pandas as pd
 import pickle
 
-# @st.cache_resource
+
+@st.cache_resource
 def load_model():
     with open('xgb_model1.pkl', 'rb') as file:
         loaded_xgb_model = pickle.load(file)
-    with open('randomforest_model.pkl', 'rb') as file:
-        loaded_random_forest_model = pickle.load(file)
-    with open('decision_tree_model.pkl', 'rb') as file:
-        loaded_decision_tree_model = pickle.load(file)
-    return loaded_xgb_model, loaded_decision_tree_model, \
-        loaded_random_forest_model
+
+    return loaded_xgb_model
 
 
 st.set_page_config(layout="wide", page_title='Heart Disease Prediction')
 
-st.sidebar.title("Heart Disease Prediction Application")
-st.sidebar.write("")
 
-xgb_model, decision_tree_model, random_forest_model = load_model()
+st.sidebar.title("Heart Disease Prediction Application")
+with st.sidebar.expander("About"):
+    st.write(f"The Movie Recommender uses cosine similarity to suggest "
+             f"movies based on user input. The system "
+             f"is built using TMDB's 5000 movie dataset. Additional "
+             f"information is "
+             f"retrieved from TMDB's API."
+             f" This project was initiated for a course at my university"
+             f" and is still a work in progress. If you would like to give"
+             f" feedback or contribute, the source code and documentation "
+             f"for the project can be found "
+             f"[here](https://github.com/YohanV1/TheMovieRecommender)."
+             f" If you have any suggestions or questions, "
+             f"please don't hesitate to reach out.")
+
+
+xgb_model = load_model()
 
 st.header('Heart Disease Prediction - Decision Trees, '
           'Random Forest, and XGBoost')
@@ -77,29 +87,38 @@ if b:
         st.error('Please specify ST slope.')
     data = {
         'Age': [int(age)],
-        'Sex': ['M' if sex == 'Male' else 'F'],
-        'ChestPainType': [chestPainType],
         'RestingBP': [int(restingBP)],
         'Cholesterol': [int(cholesterol)],
         'FastingBS': [0 if int(fastingBS) <= 120 else 1],
-        'RestingECG': [restingECG],
         'MaxHR': [int(maxHR)],
-        'ExerciseAngina': ['Y' if exerciseAngina == 'Yes' else 'N'],
         'Oldpeak': [float(oldpeak)],
-        'ST_Slope': [st_slope]
+        'Sex_F': [1 if sex == 'Female' else 0],
+        'Sex_M': [1 if sex == 'Male' else 0],
+        'ChestPainType_ASY': [1 if chestPainType == "ASY" else 0],
+        'ChestPainType_ATA': [1 if chestPainType == "ATA" else 0],
+        'ChestPainType_NAP': [1 if chestPainType == "NAP" else 0],
+        'ChestPainType_TA': [1 if chestPainType == "TA" else 0],
+        'RestingECG_LVH': [1 if restingECG == "LVH" else 0],
+        'RestingECG_Normal': [1 if restingECG == "Normal" else 0],
+        'RestingECG_ST': [1 if restingECG == "ST" else 0],
+        'ExerciseAngina_N': [0 if exerciseAngina == 'Yes' else 1],
+        'ExerciseAngina_Y': [0 if exerciseAngina == 'No' else 1],
+        'ST_Slope_Down': [1 if st_slope == "Down" else 0],
+        'ST_Slope_Flat': [1 if st_slope == "Flat" else 0],
+        'ST_Slope_Up': [1 if st_slope == "Up" else 0]
     }
 
-    df1 = pd.DataFrame(data)
-    df = pd.concat([df, df1], axis=0)
-    df = df.drop('HeartDisease', axis=1)
-    ohe_variables = ['Sex', 'ChestPainType', 'RestingECG', 'ExerciseAngina',
-                     'ST_Slope']
-    df = pd.get_dummies(data=df, prefix=ohe_variables, columns=ohe_variables)
+    df = pd.DataFrame(data)
 
-    st.write(df.iloc[1:2])
-    row_to_predict = df.iloc[1:2]
+    prediction = xgb_model.predict(df.iloc[0:1])
 
-    data_to_predict = row_to_predict.values
-
-    predictions = xgb_model.predict(xgb.DMatrix(data_to_predict))
-    st.write(predictions)
+    if prediction[0] == 0:
+        st.success('Patient does not have heart disease.'
+                   '\n XGBoost Model Metrics:'
+                   '\n Train Accuracy = 95.78%'
+                   '\n Test Accuracy = 90.76%')
+    if prediction[0] == 1:
+        st.error('Patient has heart disease.'
+                   '\n XGBoost Model Metrics:'
+                   '\n Train Accuracy = 95.78%'
+                   '\n Test Accuracy = 90.76%')
