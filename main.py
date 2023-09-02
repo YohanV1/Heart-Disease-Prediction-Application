@@ -1,11 +1,18 @@
 import streamlit as st
 import xgboost as xgb
 import pandas as pd
+import pickle
 
-
-@st.cache_resource
+# @st.cache_resource
 def load_model():
-    loaded_model = xgb.Booster(model_file='heartdisease_xgb.xgb')
+    with open('xgb_model1.pkl', 'rb') as file:
+        loaded_xgb_model = pickle.load(file)
+    with open('randomforest_model.pkl', 'rb') as file:
+        loaded_random_forest_model = pickle.load(file)
+    with open('decision_tree_model.pkl', 'rb') as file:
+        loaded_decision_tree_model = pickle.load(file)
+    return loaded_xgb_model, loaded_decision_tree_model, \
+        loaded_random_forest_model
 
 
 st.set_page_config(layout="wide", page_title='Heart Disease Prediction')
@@ -13,7 +20,7 @@ st.set_page_config(layout="wide", page_title='Heart Disease Prediction')
 st.sidebar.title("Heart Disease Prediction Application")
 st.sidebar.write("")
 
-model = load_model()
+xgb_model, decision_tree_model, random_forest_model = load_model()
 
 st.header('Heart Disease Prediction - Decision Trees, '
           'Random Forest, and XGBoost')
@@ -54,36 +61,45 @@ with col2:
 b = st.button("Run Model.")
 
 if b:
-    if age is '' or restingBP is '' or cholesterol is '' or fastingBS \
-            is '' or maxHR is '' or oldpeak is '':
+    if age == '' or restingBP == '' or cholesterol == '' or fastingBS \
+            == '' or maxHR == '' or oldpeak == '':
         st.error('Please specify all the details.')
         print(age, restingBP, cholesterol, fastingBS, maxHR, oldpeak)
-    elif sex is '':
+    elif sex == '':
         st.error('Please specify sex.')
-    elif chestPainType is '':
+    elif chestPainType == '':
         st.error('Please specify chest pain type.')
-    elif restingECG is '':
+    elif restingECG == '':
         st.error('Please specify ECG results.')
-    elif exerciseAngina is '':
+    elif exerciseAngina == '':
         st.error('Please specify if you have exercise-induced angina.')
-    elif st_slope is '':
+    elif st_slope == '':
         st.error('Please specify ST slope.')
     data = {
         'Age': [int(age)],
-        'Sex': ['M' if sex is 'Male' else 'F'],
+        'Sex': ['M' if sex == 'Male' else 'F'],
         'ChestPainType': [chestPainType],
         'RestingBP': [int(restingBP)],
         'Cholesterol': [int(cholesterol)],
         'FastingBS': [0 if int(fastingBS) <= 120 else 1],
         'RestingECG': [restingECG],
         'MaxHR': [int(maxHR)],
-        'ExerciseAngina': ['Y' if exerciseAngina is 'Yes' else 'No'],
+        'ExerciseAngina': ['Y' if exerciseAngina == 'Yes' else 'N'],
         'Oldpeak': [float(oldpeak)],
         'ST_Slope': [st_slope]
     }
 
-    df = pd.DataFrame(data)
-    st.write(df)
-
+    df1 = pd.DataFrame(data)
+    df = pd.concat([df, df1], axis=0)
+    df = df.drop('HeartDisease', axis=1)
     ohe_variables = ['Sex', 'ChestPainType', 'RestingECG', 'ExerciseAngina',
                      'ST_Slope']
+    df = pd.get_dummies(data=df, prefix=ohe_variables, columns=ohe_variables)
+
+    st.write(df.iloc[1:2])
+    row_to_predict = df.iloc[1:2]
+
+    data_to_predict = row_to_predict.values
+
+    predictions = xgb_model.predict(xgb.DMatrix(data_to_predict))
+    st.write(predictions)
