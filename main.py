@@ -16,20 +16,24 @@ st.set_page_config(layout="wide", page_title='Heart Disease Prediction')
 
 st.sidebar.title("Heart Disease Prediction Application")
 with st.sidebar.expander("About"):
-    st.write(f"The Movie Recommender uses cosine similarity to suggest "
-             f"movies based on user input. The system "
-             f"is built using TMDB's 5000 movie dataset. Additional "
-             f"information is "
-             f"retrieved from TMDB's API."
-             f" This project was initiated for a course at my university"
-             f" and is still a work in progress. If you would like to give"
-             f" feedback or contribute, the source code and documentation "
+    st.write(f"This application was built on the heart failure prediction"
+             f" dataset from "
+             f"[Kaggle](https://www.kaggle.com/datasets/"
+             f"fedesoriano/heart-failure-prediction)."
+             f" The source code and documentation "
              f"for the project can be found "
-             f"[here](https://github.com/YohanV1/TheMovieRecommender)."
+             f"[here](https://github.com/YohanV1/Heart-Disease-Prediction-Application)."
              f" If you have any suggestions or questions, "
              f"please don't hesitate to reach out.")
+with st.sidebar.expander('Model Metrics: '):
+    st.subheader("Decision Tree: ")
+    st.write("Train = 84.06%, Test = 85.33%")
+    st.subheader("Random Forest: ")
+    st.write("Train = 93.05%, Test = 89.67%")
+    st.subheader("XGBoost: ")
+    st.write("Train = 95.78%, Test = 90.76%")
 
-
+st.sidebar.write('Parameters can be tuned further for better results.')
 xgb_model = load_model()
 
 st.header('Heart Disease Prediction - Decision Trees, '
@@ -85,40 +89,37 @@ if b:
         st.error('Please specify if you have exercise-induced angina.')
     elif st_slope == '':
         st.error('Please specify ST slope.')
-    data = {
-        'Age': [int(age)],
-        'RestingBP': [int(restingBP)],
-        'Cholesterol': [int(cholesterol)],
-        'FastingBS': [0 if int(fastingBS) <= 120 else 1],
-        'MaxHR': [int(maxHR)],
-        'Oldpeak': [float(oldpeak)],
-        'Sex_F': [1 if sex == 'Female' else 0],
-        'Sex_M': [1 if sex == 'Male' else 0],
-        'ChestPainType_ASY': [1 if chestPainType == "ASY" else 0],
-        'ChestPainType_ATA': [1 if chestPainType == "ATA" else 0],
-        'ChestPainType_NAP': [1 if chestPainType == "NAP" else 0],
-        'ChestPainType_TA': [1 if chestPainType == "TA" else 0],
-        'RestingECG_LVH': [1 if restingECG == "LVH" else 0],
-        'RestingECG_Normal': [1 if restingECG == "Normal" else 0],
-        'RestingECG_ST': [1 if restingECG == "ST" else 0],
-        'ExerciseAngina_N': [0 if exerciseAngina == 'Yes' else 1],
-        'ExerciseAngina_Y': [0 if exerciseAngina == 'No' else 1],
-        'ST_Slope_Down': [1 if st_slope == "Down" else 0],
-        'ST_Slope_Flat': [1 if st_slope == "Flat" else 0],
-        'ST_Slope_Up': [1 if st_slope == "Up" else 0]
-    }
+    else:
+        data = {
+            'Age': [int(age)],
+            'RestingBP': [int(restingBP)],
+            'Cholesterol': [int(cholesterol)],
+            'FastingBS': [0 if int(fastingBS) <= 120 else 1],
+            'MaxHR': [int(maxHR)],
+            'Oldpeak': [float(oldpeak)],
+            'Sex_F': [1 if sex == 'Female' else 0],
+            'Sex_M': [1 if sex == 'Male' else 0],
+            'ChestPainType_ASY': [1 if chestPainType == "ASY" else 0],
+            'ChestPainType_ATA': [1 if chestPainType == "ATA" else 0],
+            'ChestPainType_NAP': [1 if chestPainType == "NAP" else 0],
+            'ChestPainType_TA': [1 if chestPainType == "TA" else 0],
+            'RestingECG_LVH': [1 if restingECG == "LVH" else 0],
+            'RestingECG_Normal': [1 if restingECG == "Normal" else 0],
+            'RestingECG_ST': [1 if restingECG == "ST" else 0],
+            'ExerciseAngina_N': [0 if exerciseAngina == 'Yes' else 1],
+            'ExerciseAngina_Y': [0 if exerciseAngina == 'No' else 1],
+            'ST_Slope_Down': [1 if st_slope == "Down" else 0],
+            'ST_Slope_Flat': [1 if st_slope == "Flat" else 0],
+            'ST_Slope_Up': [1 if st_slope == "Up" else 0]
+        }
 
-    df = pd.DataFrame(data)
+        df = pd.DataFrame(data)
 
-    prediction = xgb_model.predict(df.iloc[0:1])
+        prediction = xgb_model.predict(df.iloc[0:1])
 
-    if prediction[0] == 0:
-        st.success('Patient does not have heart disease.'
-                   '\n XGBoost Model Metrics:'
-                   '\n Train Accuracy = 95.78%'
-                   '\n Test Accuracy = 90.76%')
-    if prediction[0] == 1:
-        st.error('Patient has heart disease.'
-                   '\n XGBoost Model Metrics:'
-                   '\n Train Accuracy = 95.78%'
-                   '\n Test Accuracy = 90.76%')
+        if prediction[0] == 0:
+            st.success('Patient does not have heart disease. '
+                       '[Prediction from XGBoost]')
+        if prediction[0] == 1:
+            st.error('Patient has heart disease.'
+                     '[Prediction from XGBoost]')
